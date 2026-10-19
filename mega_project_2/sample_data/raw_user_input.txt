@@ -1,0 +1,6 @@
+<USER_REQUEST>
+use this csv file for recomendation
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-09-10T12:29:13+05:30.
+</ADDITIONAL_METADATA>

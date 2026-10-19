@@ -1,0 +1,11 @@
+{
+  "name": "informal-worker-benefit-system",
+  "version": "1.0.0",
+  "description": "Informal Worker Benefit Recommendation and Tracking System",
+  "scripts": {
+    "start": "python run_all.py",
+    "dev": "python run_all.py",
+    "backend": "python run_backend.py",
+    "frontend": "npm --prefix frontend run dev"
+  }
+}
