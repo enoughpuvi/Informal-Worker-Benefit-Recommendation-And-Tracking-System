@@ -98,44 +98,6 @@ export const VoiceAssistantPage: React.FC = () => {
     }
   }, [history]);
 
-  // Auto-submit when speech recognition finishes with a transcript
-  useEffect(() => {
-    if (!isListening && transcript && !autoSubmitted && !loading) {
-      setAutoSubmitted(true);
-      handleSubmit(transcript);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isListening, transcript]);
-
-  // ─── Share handlers ───
-  const handleCopy = async () => {
-    const text = formatVoiceForShare(history);
-    const ok = await copyToClipboard(text);
-    if (ok) {
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
-    }
-  };
-
-  const handleShare = async () => {
-    const text = formatVoiceForShare(history);
-    const shared = await shareViaWebShare(text, 'Talk to Apana AI - Chat');
-    if (!shared) {
-      await handleCopy();
-    }
-  };
-
-  const handleDownload = () => {
-    const text = formatVoiceForShare(history);
-    const date = new Date().toISOString().slice(0, 10);
-    downloadAsTextFile(text, `apana-voice-chat-${date}.txt`);
-  };
-
-  const handleClearHistory = () => {
-    clearVoiceHistory();
-    setHistory([]);
-  };
-
   /** Submit a question to the chatbot API */
   const handleSubmit = useCallback(async (question: string) => {
     const q = question.trim();
@@ -172,6 +134,43 @@ export const VoiceAssistantPage: React.FC = () => {
       setLoading(false);
     }
   }, [loading, speak, voiceLang]);
+
+  // Auto-submit when speech recognition finishes with a transcript
+  useEffect(() => {
+    if (!isListening && transcript && !autoSubmitted && !loading) {
+      setAutoSubmitted(true);
+      handleSubmit(transcript);
+    }
+  }, [isListening, transcript, autoSubmitted, loading, handleSubmit]);
+
+  // ─── Share handlers ───
+  const handleCopy = async () => {
+    const text = formatVoiceForShare(history);
+    const ok = await copyToClipboard(text);
+    if (ok) {
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    }
+  };
+
+  const handleShare = async () => {
+    const text = formatVoiceForShare(history);
+    const shared = await shareViaWebShare(text, 'Talk to Apana AI - Chat');
+    if (!shared) {
+      await handleCopy();
+    }
+  };
+
+  const handleDownload = () => {
+    const text = formatVoiceForShare(history);
+    const date = new Date().toISOString().slice(0, 10);
+    downloadAsTextFile(text, `apana-voice-chat-${date}.txt`);
+  };
+
+  const handleClearHistory = () => {
+    clearVoiceHistory();
+    setHistory([]);
+  };
 
   /** Handle text input submission */
   const handleTextSubmit = () => {

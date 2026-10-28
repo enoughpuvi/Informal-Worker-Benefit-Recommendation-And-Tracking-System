@@ -48,13 +48,6 @@ function getLocalSchemes(): PortalScheme[] {
   return INITIAL_PORTAL_SCHEMES;
 }
 
-function saveLocalSchemes(schemes: PortalScheme[]) {
-  try {
-    localStorage.setItem(LOCAL_STORAGE_SCHEMES_KEY, JSON.stringify(schemes));
-  } catch (err) {
-    console.warn('[FirestoreService] Local storage write error:', err);
-  }
-}
 
 export const firestoreService = {
   /**

@@ -32,7 +32,6 @@ import { AdminAuditLogsPage } from './pages/AdminAuditLogsPage';
 import { GrievanceReportPage } from './pages/GrievanceReportPage';
 import { TrustedPortalsPage } from './pages/TrustedPortalsPage';
 import { VoiceAssistantPage } from './pages/VoiceAssistantPage';
-// import { HelpPage } from './pages/HelpPage';
 
 // Route Guards
 const ProtectedWorkerRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -79,7 +78,6 @@ const AppLayout: React.FC = () => {
             <Route path="/schemes/:schemeId" element={<SchemeDetailPage />} />
             <Route path="/portals" element={<TrustedPortalsPage />} />
             <Route path="/voice-assistant" element={<VoiceAssistantPage />} />
-            {/* <Route path="/help" element={<HelpPage />} /> */}
 
             {/* Worker Protected Routes */}
             <Route path="/dashboard" element={<ProtectedWorkerRoute><WorkerDashboard /></ProtectedWorkerRoute>} />

@@ -16,10 +16,24 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 
+interface SpeechRecognitionInstance extends EventTarget {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onstart: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+}
+
 // Extend Window interface for webkitSpeechRecognition
 interface IWindow extends Window {
-  SpeechRecognition?: typeof SpeechRecognition;
-  webkitSpeechRecognition?: typeof SpeechRecognition;
+  SpeechRecognition?: { new (): SpeechRecognitionInstance };
+  webkitSpeechRecognition?: { new (): SpeechRecognitionInstance };
 }
 
 interface UseSpeechRecognitionReturn {
@@ -74,7 +88,7 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
   const [error, setError] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
   // Clean up on unmount
   useEffect(() => {
@@ -153,7 +167,7 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
 
     try {
       recognition.start();
-    } catch (e) {
+    } catch {
       setError('Could not start voice recognition. Please try again.');
       setIsListening(false);
     }

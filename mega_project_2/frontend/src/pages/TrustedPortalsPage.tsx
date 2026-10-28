@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { firestoreService } from '../services/firestoreService';
 import { portalsApi } from '../services/api';
-import { TrustedPortal, PortalScheme, PortalCategory } from '../types';
+import { TrustedPortal, PortalScheme } from '../types';
 import { PORTAL_CATEGORIES, INITIAL_TRUSTED_PORTALS, INITIAL_PORTAL_SCHEMES } from '../data/trustedPortalsData';
 import { stateDistrictsMap } from '../data/locationAndOccupations';
 import { PortalCard } from '../components/PortalCard';
@@ -14,7 +14,6 @@ import {
   MapPin,
   Layers,
   Search,
-  Filter,
   ShieldCheck,
   CheckCircle2,
   AlertTriangle,
@@ -30,7 +29,7 @@ type BrowseMode = 'central' | 'state' | 'category' | 'directory';
 
 export const TrustedPortalsPage: React.FC = () => {
   const { isAdmin } = useAuth();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
 
   // Primary Browse Mode
   const [browseMode, setBrowseMode] = useState<BrowseMode>('central');
@@ -39,7 +38,6 @@ export const TrustedPortalsPage: React.FC = () => {
   const [portals, setPortals] = useState<TrustedPortal[]>([]);
   const [schemes, setSchemes] = useState<PortalScheme[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -76,64 +74,60 @@ export const TrustedPortalsPage: React.FC = () => {
   ];
 
   // Fetch initial data
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
-    setError(null);
     let fetchedPortals: TrustedPortal[] = [];
     let fetchedSchemes: PortalScheme[] = [];
 
-    // Helper: wrap a promise with a timeout so Firestore calls don't hang
+    // Helper: wrap a promise with a timeout so network calls don't hang
     const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> =>
       Promise.race([
         promise,
         new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms))
       ]);
 
-    // Strategy 1: Try Firestore (with a 5-second timeout to prevent hangs)
+    // Strategy 1: Fast local backend API
     try {
-      await withTimeout(firestoreService.initializeFirestore(), 5000);
-      const [portals, schemes] = await withTimeout(
-        Promise.all([firestoreService.getPortals(), firestoreService.getSchemes()]),
-        5000
+      const [portalsRes, schemesRes] = await withTimeout(
+        Promise.all([portalsApi.getPortals(), portalsApi.getSchemesDirectory()]),
+        2000
       );
-      if (portals.length > 0) fetchedPortals = portals;
-      if (schemes.length > 0) fetchedSchemes = schemes;
-    } catch (fErr) {
-      console.warn('[TrustedPortals] Firestore unavailable, trying backend API:', fErr);
+      if (portalsRes && portalsRes.length > 0) fetchedPortals = portalsRes;
+      if (schemesRes && schemesRes.length > 0) fetchedSchemes = schemesRes;
+    } catch (apiErr) {
+      console.warn('[TrustedPortals] Backend API unavailable or timed out, trying local store/Firestore:', apiErr);
     }
 
-    // Strategy 2: Try backend API if Firestore returned nothing
+    // Strategy 2: If Firestore has cached or remote data
     if (fetchedPortals.length === 0 || fetchedSchemes.length === 0) {
       try {
-        if (fetchedPortals.length === 0) {
-          fetchedPortals = await withTimeout(portalsApi.getPortals(), 5000);
-        }
-        if (fetchedSchemes.length === 0) {
-          fetchedSchemes = await withTimeout(portalsApi.getSchemesDirectory(), 5000);
-        }
-      } catch (apiErr) {
-        console.warn('[TrustedPortals] Backend API also unavailable:', apiErr);
+        const [portalsData, schemesData] = await withTimeout(
+          Promise.all([firestoreService.getPortals(), firestoreService.getSchemes()]),
+          1500
+        );
+        if (fetchedPortals.length === 0 && portalsData.length > 0) fetchedPortals = portalsData;
+        if (fetchedSchemes.length === 0 && schemesData.length > 0) fetchedSchemes = schemesData;
+      } catch (fErr) {
+        console.warn('[TrustedPortals] Firestore fallback passed:', fErr);
       }
     }
 
-    // Strategy 3: Always fall back to hardcoded seed data if everything else failed
+    // Strategy 3: Always fall back to verified initial seed data
     if (fetchedPortals.length === 0) {
-      console.info('[TrustedPortals] Using hardcoded initial portals data.');
       fetchedPortals = INITIAL_TRUSTED_PORTALS;
     }
     if (fetchedSchemes.length === 0) {
-      console.info('[TrustedPortals] Using hardcoded initial schemes data.');
       fetchedSchemes = INITIAL_PORTAL_SCHEMES;
     }
 
     setPortals(fetchedPortals);
     setSchemes(fetchedSchemes);
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   // Filter Portals according to current browse mode and filter inputs
   const filteredPortals = useMemo(() => {

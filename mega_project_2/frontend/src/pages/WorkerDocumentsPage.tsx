@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { applicationApi, documentApi } from '../services/api';
 import { Application, DocumentItem } from '../types';
 import { EligibilityBadge } from '../components/EligibilityBadge';
@@ -16,7 +16,6 @@ import {
   UploadCloud,
   X,
   CheckCircle,
-  Link as LinkIcon,
   Layers
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -64,7 +63,7 @@ export const WorkerDocumentsPage: React.FC = () => {
   // Delete State
   const [submittingDelete, setSubmittingDelete] = useState(false);
 
-  const loadAllData = async () => {
+  const loadAllData = useCallback(async () => {
     setLoading(true);
     try {
       const [docsData, appsData] = await Promise.all([
@@ -79,11 +78,11 @@ export const WorkerDocumentsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast]);
 
   useEffect(() => {
     loadAllData();
-  }, []);
+  }, [loadAllData]);
 
   // Duplicate Check for Adding: Is document type already added?
   const isAddDuplicate = documents.some(

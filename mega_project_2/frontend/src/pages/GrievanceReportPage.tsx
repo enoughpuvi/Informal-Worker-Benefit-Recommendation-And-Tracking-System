@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { issueApi } from '../services/api';
@@ -12,17 +12,15 @@ import {
   Send,
   Search,
   MessageSquare,
-  ShieldAlert,
   FileText,
   X,
   Filter,
   CheckCircle,
-  HelpCircle,
   UserCheck
 } from 'lucide-react';
 
 export const GrievanceReportPage: React.FC = () => {
-  const { user, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const { showToast } = useToast();
 
   const [issues, setIssues] = useState<IssueReport[]>([]);
@@ -45,7 +43,7 @@ export const GrievanceReportPage: React.FC = () => {
   const [adminResponseNote, setAdminResponseNote] = useState<string>('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  const fetchIssues = async () => {
+  const fetchIssues = useCallback(async () => {
     setLoading(true);
     try {
       if (isAdmin) {
@@ -64,11 +62,11 @@ export const GrievanceReportPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAdmin, statusFilter, searchQuery, showToast]);
 
   useEffect(() => {
     fetchIssues();
-  }, [isAdmin, statusFilter]);
+  }, [fetchIssues]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
